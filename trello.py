@@ -10,7 +10,7 @@ import argparse
 import bugzilla
 from bugzilla import Bugzilla
 import logging
-
+import ConfigParser
 
 def split_len(seq, length):
 	return [seq[i:i+length] for i in range(0, len(seq), length)]
@@ -59,19 +59,69 @@ def labels(card):
 		r += "[%s] " % l["name"]
 	return r
 
+def load_config(file_name):
+	global key, secret, token
+	file_name = os.path.expanduser(file_name)
+	config.read(file_name)
+	if config.has_section('auth'):
+		if config.has_option('auth', 'key'):
+			key = config.get('auth', 'key')
+		if config.has_option('auth', 'secret'):
+			secret = config.get('auth', 'secret')
+		if config.has_option('auth', 'token'):
+			token = config.get('auth', 'token')
+
+def store_config(file_name):
+	global key, secret, token
+	file_name = os.path.expanduser(file_name)
+	if not config.has_section('auth'):
+		config.add_section('auth')
+	config.set('auth', 'key', key)
+	config.set('auth', 'secret', secret)
+	config.set('auth', 'token', token)
+	with os.fdopen(os.open(file_name, os.O_WRONLY | os.O_CREAT, 0600), 'w') as cfg_file:
+		config.write(cfg_file)
+	cfg_file.close()
+
 ###############################################################################
 
+# Authentication
+key    = ''
+secret = ''
+token  = ''
+
+# Configuration
+config_file = '~/.trello'
+config = ConfigParser.RawConfigParser()
+
+try:
+	load_config(config_file)
+except ConfigParser.Error:
+	print "Error reading config file " + config_file
+	sys.exit(1)
+
 parser = argparse.ArgumentParser()
+parser.add_argument("-i", "--init", help="Store auth values from command-line to config file", action="store_true")
 parser.add_argument("-b", "--board", help='board to print (defaults to "A&O")', default="A&O")
 parser.add_argument("-l", "--label", help='filter by label (defaults to none)')
 parser.add_argument("--printlabels", help='print labels (defaults to false)', action="store_true")
 parser.add_argument("-L", "--listboards", help='list all available boards', action="store_true")
-parser.add_argument("-u", "--devkey", help='developer key to access trello', required=True)
-parser.add_argument("-p", "--secret", help='developer secret to access trello', required=True)
-parser.add_argument("-t", "--token", help='developer token to access trello', required=True)
+parser.add_argument("-u", "--devkey", help='developer key to access trello', required=False)
+parser.add_argument("-p", "--secret", help='developer secret to access trello', required=False)
+parser.add_argument("-t", "--token", help='developer token to access trello', required=False)
 args = parser.parse_args()
 
-trello = TrelloClient(args.devkey, args.secret, token=args.token)
+if args.devkey:
+	key = args.devkey
+if args.secret:
+	secret = args.secret
+if args.token:
+	token = args.token
+
+if args.init:
+	store_config(config_file)
+
+trello = TrelloClient(key, secret, token=token)
 boards = trello.list_boards()
 bz = None
 
