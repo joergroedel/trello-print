@@ -108,7 +108,7 @@ for b in boards:
 			if len(c.checklists) > 0:
 				for cl in c.checklists:
 					for i in sorted(cl.items, key=itemgetter('pos')):
-						print_item(4*" ", "[%s] %s" % ( checkx(i), i['name'] ))
+						print_item(4*" ", "%s" % ( i['name'] ))
 			for co in reversed(c.comments):
 				print_item(4*" ", co['data']['text'])
 	break
