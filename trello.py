@@ -68,9 +68,10 @@ parser.add_argument("--printlabels", help='print labels (defaults to false)', ac
 parser.add_argument("-L", "--listboards", help='list all available boards', action="store_true")
 parser.add_argument("-u", "--devkey", help='developer key to access trello', required=True)
 parser.add_argument("-p", "--secret", help='developer secret to access trello', required=True)
+parser.add_argument("-t", "--token", help='developer token to access trello', required=True)
 args = parser.parse_args()
 
-trello = TrelloClient(args.devkey, args.secret)
+trello = TrelloClient(args.devkey, args.secret, token=args.token)
 boards = trello.list_boards()
 bz = None
 
